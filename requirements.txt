@@ -1,0 +1,12 @@
+numpy==1.26.4
+tqdm
+tensorflow==2.15.0
+# tensorflow[and-cuda]
+ipywidgets
+Pillow
+pydot
+graphviz
+nltk
+matplotlib
+streamlit
+# nvidia-cudnn-cu12==8.9.4.25

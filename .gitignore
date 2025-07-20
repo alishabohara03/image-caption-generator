@@ -1,0 +1,5 @@
+venv
+data
+app/models/
+notebooks/*
+!notebooks/eda_captionining.ipynb
