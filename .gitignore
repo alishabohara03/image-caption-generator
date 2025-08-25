@@ -23,7 +23,15 @@ dist-ssr
 *.sln
 *.sw?
 
-.venv
+.venv/
 app/models/
 backend/.env
+__pycache__/
+*.pyc
+.vscode
+backend/app/**/__pycache__/
+backend/app/**/*.pyc
+backend/**/__pycache__/
+backend/**/*.pyc
+
 
