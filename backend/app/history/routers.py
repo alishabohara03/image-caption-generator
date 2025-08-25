@@ -25,33 +25,33 @@ async def get_recent_history(
         "count": len(recent_captions)
     }
 
-@router.get("/all", response_model=PaginatedHistoryResponse)
-async def get_all_history(
-    page: int = Query(1, ge=1),
-    limit: int = Query(10, ge=1, le=100),
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    """Get paginated history for logged-in user"""
+# @router.get("/all", response_model=PaginatedHistoryResponse)
+# async def get_all_history(
+#     page: int = Query(1, ge=1),
+#     limit: int = Query(10, ge=1, le=100),
+#     current_user: User = Depends(get_current_user),
+#     db: Session = Depends(get_db)
+# ):
+#     """Get paginated history for logged-in user"""
     
-    # Calculate offset
-    offset = (page - 1) * limit
+#     # Calculate offset
+#     offset = (page - 1) * limit
     
-    # Get total count
-    total = db.query(Caption).filter(Caption.user_id == current_user.id).count()
+#     # Get total count
+#     total = db.query(Caption).filter(Caption.user_id == current_user.id).count()
     
-    # Get paginated results
-    captions = db.query(Caption).filter(
-        Caption.user_id == current_user.id
-    ).order_by(desc(Caption.created_at)).offset(offset).limit(limit).all()
+#     # Get paginated results
+#     captions = db.query(Caption).filter(
+#         Caption.user_id == current_user.id
+#     ).order_by(desc(Caption.created_at)).offset(offset).limit(limit).all()
     
-    # Calculate total pages
-    total_pages = math.ceil(total / limit)
+#     # Calculate total pages
+#     total_pages = math.ceil(total / limit)
     
-    return {
-        "items": captions,
-        "total": total,
-        "page": page,
-        "limit": limit,
-        "total_pages": total_pages
-    }
+#     return {
+#         "items": captions,
+#         "total": total,
+#         "page": page,
+#         "limit": limit,
+#         "total_pages": total_pages
+#     }

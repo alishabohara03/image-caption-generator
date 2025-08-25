@@ -29,10 +29,8 @@ backend/.env
 __pycache__/
 *.pyc
 .vscode
-backend/app/**/__pycache__/
-backend/app/**/*.pyc
-backend/**/__pycache__/
-backend/**/*.pyc
+**/__pycache__/
+**/*.pyc
 
 
 backend/models/*.h5

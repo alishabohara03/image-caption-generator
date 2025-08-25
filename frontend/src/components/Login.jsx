@@ -1,29 +1,42 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
+
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
-
+  
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // Placeholder fetch call to FastAPI /login endpoint
-    // fetch('/login', {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify({ email, password }),
-    // })
-    // .then(response => response.json())
-    // .then(data => {
-    //   if (data.success) navigate('/');
-    //   else alert('Login failed');
-    // })
-    // .catch(error => console.error('Error logging in:', error));
-    navigate('/'); // Temporary redirect for demo
-  };
 
+    try {
+      const response = await fetch("http://localhost:8000/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!response.ok) {
+        // e.g., 401 Unauthorized
+        alert("Login failed. Check your credentials.");
+        return;
+      }
+
+      const data = await response.json();
+
+      // Save token in localStorage or context
+      localStorage.setItem("token", data.access_token);
+      localStorage.setItem("user", JSON.stringify(data.user));
+
+      alert(`Welcome ${data.user.name}!`);
+      navigate("/"); // Redirect to Home page after login
+    } catch (error) {
+      console.error("Error logging in:", error);
+      alert("Login failed. Please try again.");
+    }
+  };
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
       <div className="w-full max-w-4xl bg-white shadow-lg rounded-lg flex flex-col md:flex-row">
@@ -81,5 +94,6 @@ const Login = () => {
     </div>
   );
 };
+
 
 export default Login;

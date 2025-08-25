@@ -4,23 +4,27 @@ from app.auth.routers import router as auth_router
 from app.caption.routers import router as caption_router
 from app.history.routers import router as history_router
 from app.db.database import engine, Base
-from starlette.middleware.sessions import SessionMiddleware
 from app.core.config import settings
 
 
 app = FastAPI(title="Image Caption Generator API", version="1.0.0")
 
+origins = [
+    "http://127.0.0.1:8000",
+    "http://localhost:8000",
+    "http://127.0.0.1:3000",
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+
+]
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-)
-app.add_middleware(
-    SessionMiddleware,
-    secret_key=settings.jwt_secret_key,
 )
 
 # Create tables
