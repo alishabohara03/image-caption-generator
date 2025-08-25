@@ -24,7 +24,6 @@ dist-ssr
 *.sw?
 
 .venv/
-backend/app/models/
 backend/.env
 __pycache__/
 *.pyc
@@ -34,4 +33,6 @@ __pycache__/
 
 
 backend/models/*.h5
-backend/models/*.pkl
+*.keras
+*.pkl
+

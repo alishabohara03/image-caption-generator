@@ -10,16 +10,19 @@ Currently, two official plugins are available:
 ## Expanding the ESLint configuration
 
 If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+
 # Caption Generation Backend
 
 ## Setup
+
 1. Install dependencies: `pip install -r requirements.txt`
 2. Set up PostgreSQL database
 3. Configure environment variables in `.env`
-4. Place your `model.h5` and `tokenizer.pkl` in `models/` directory
+4. Place your `feature_extractor.keras`, `model.keras ` and `tokenizer.pkl` in `models/` directory
 5. Run: `uvicorn app.main:app --reload`
 
 ## API Endpoints
+
 - POST /auth/signup - Register user
 - POST /auth/login - Login user
 - POST /caption/upload - Upload image and generate caption
