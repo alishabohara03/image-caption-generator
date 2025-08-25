@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Request
 from sqlalchemy.orm import Session
 from app.caption.schemas import UploadResponse
-from app.caption.services import caption_generator
+from app.caption.services import generate_caption
 from app.storage.cloud import upload_image_to_cloudinary
 from app.db.database import get_db
 from app.db.models import User, Caption
@@ -61,7 +61,7 @@ async def upload_and_caption(
         image_url = await upload_image_to_cloudinary(file)
 
         # Generate caption
-        caption_text = caption_generator.generate_caption(image_url)
+        caption_text = generate_caption(image_url)
 
         if current_user:
             # Logged-in user → save to DB
@@ -75,8 +75,7 @@ async def upload_and_caption(
             db.refresh(caption_record)
             caption_id = caption_record.id
         else:
-            # Guest → track usage, no DB save
-            ip = request.client.host
+            # Guest track usage, no DB save
             guest_usage[ip] = guest_usage.get(ip, 0) + 1
             caption_id = None
 
