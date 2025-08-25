@@ -22,8 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-venv
-data
+
+.venv
 app/models/
-notebooks/*
-!notebooks/eda_captionining.ipynb
+backend/.env
+
