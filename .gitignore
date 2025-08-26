@@ -35,4 +35,8 @@ __pycache__/
 backend/models/*.h5
 *.keras
 *.pkl
+*/.keras/
+*/*/.keras/
+*/*/*/.keras/
+
 
