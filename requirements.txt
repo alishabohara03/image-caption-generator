@@ -1,0 +1,8 @@
+# tensorflow[and-cuda]
+numpy>=1.23
+tqdm
+matplotlib
+pydot
+graphviz
+nltk 
+emoji
