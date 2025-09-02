@@ -1,216 +1,212 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from "react";
 
 const Home = () => {
- const [image, setImage] = useState(null);
- const [caption, setCaption] = useState('');
- const [loading, setLoading] = useState(false);
+  const [image, setImage] = useState(null);
+  const [caption, setCaption] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [recent, setRecent] = useState([]);
+  const [guestUsed, setGuestUsed] = useState(false);
 
- const handleImageUpload = (event) => {
-   const file = event.target.files ? event.target.files[0] : event.dataTransfer.files[0];
-   if (file && ['image/jpeg', 'image/png'].includes(file.type)) {
-     setImage(file);
-   } else {
-     alert('Please upload only .jpg or .png files.');
-     setImage(null);
-   }
- };
+  const token = localStorage.getItem("token");
 
- const handleDrop = (event) => {
-   event.preventDefault();
-   handleImageUpload(event);
- };
+  // Fetch recent captions for logged-in users
+  useEffect(() => {
+    if (!token) return;
 
- const handleDragOver = (event) => {
-   event.preventDefault();
- };
+    const fetchRecent = async () => {
+      try {
+        const res = await fetch("http://localhost:8000/history/recent", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+        setRecent(data.items || []);
+      } catch (err) {
+        console.error("Error fetching recent captions:", err);
+      }
+    };
 
- const generateCaption = async () => {
-   if (!image) return;
-   setLoading(true);
-   const formData = new FormData();
-   formData.append('image', image);
+    fetchRecent();
+  }, [token]);
 
-   try {
-     const response = await fetch('http://localhost:8000/generate', {
-       method: 'POST',
-       body: formData,
-     });
-     const data = await response.json();
-     setCaption(data.caption || 'No caption generated.');
-   } catch (error) {
-     console.error('Error generating caption:', error);
-     setCaption('Error generating caption');
-   }
-   setLoading(false);
- };
+  const handleImageUpload = (event) => {
+    const file = event.target.files ? event.target.files[0] : event.dataTransfer.files[0];
+    if (file && ["image/jpeg", "image/png", "image/gif"].includes(file.type)) {
+      setImage(file);
+    } else {
+      alert("Please upload only .jpg, .png or .gif files.");
+      setImage(null);
+    }
+  };
 
- const downloadCaption = () => {
-   if (caption) {
-     const blob = new Blob([caption], { type: 'text/plain' });
-     const url = window.URL.createObjectURL(blob);
-     const a = document.createElement('a');
-     a.href = url;
-     a.download = 'caption.txt';
-     a.click();
-     window.URL.revokeObjectURL(url);
-   }
- };
+  const handleDrop = (e) => { e.preventDefault(); handleImageUpload(e); };
+  const handleDragOver = (e) => e.preventDefault();
 
- const saveToDatabase = async () => {
-   if (image && caption) {
-     const formData = new FormData();
-     formData.append('image', image);
-     formData.append('caption', caption);
+  // Generate caption
+  const generateCaption = async () => {
+    if (!image) return;
 
-     try {
-       await fetch('http://localhost:8000/save', {
-         method: 'POST',
-         body: formData,
-       });
-       alert('Image and caption saved to database!');
-     } catch (error) {
-       console.error('Error saving to database:', error);
-       alert('Error saving to database');
-     }
-   }
- };
+    // Guest user: only allow one caption
+    if (!token && guestUsed) {
+      alert("You must login to generate more captions.");
+      return;
+    }
 
- return (
-   <div className="min-h-screen bg-gray-50 p-6 sm:p-8">
-     <div className="max-w-4xl mx-auto">
-       {/* Header */}
-       <div className="flex justify-between items-center mb-8">
-         <h1 className="text-4xl font-bold text-black">Image Caption Generator</h1>
-       </div>
+    setLoading(true);
+    const formData = new FormData();
+    formData.append("file", image);
 
-       {/* Main Content */}
-       <div className="bg-white p-6 sm:p-8 rounded-lg border border-gray-200 shadow-lg">
-         <div className="text-center mb-8">
-           <h2 className="text-3xl font-semibold text-black">Generate Captions from any Image</h2>
-           <p className="text-lg text-gray-600 mt-2">
-             Upload your image and get intelligent, context-aware captions instantly.
-           </p>
-         </div>
+    try {
+      const res = await fetch("http://localhost:8000/caption/upload", {
+        method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: formData,
+      });
 
-         {/* Upload Area */}
-         <div
-           onDrop={handleDrop}
-           onDragOver={handleDragOver}
-           onClick={() => document.getElementById('imageUpload').click()}
-           className="border-2 border-dashed border-gray-400 bg-gray-100 p-8 text-center rounded-lg cursor-pointer hover:border-gray-500 hover:bg-gray-200 transition mb-6"
-         >
-           <input
-             type="file"
-             accept="image/jpeg,image/png"
-             onChange={handleImageUpload}
-             className="hidden"
-             id="imageUpload"
-           />
-           <div className="flex flex-col items-center justify-center">
-             <div className="w-16 h-16 mb-4 bg-gray-300 rounded-full flex items-center justify-center">
-               <span className="text-2xl text-gray-600">+</span>
-             </div>
-             <p className="text-lg font-semibold text-black mb-2">Drag and drop an image here, or click to browse</p>
-             <p className="text-sm text-gray-500">
-               JPG and PNG image formats supported
-             </p>
-           </div>
-           {image && (
-             <div className="mt-6 flex items-center justify-center p-4 bg-gray-50 rounded-lg">
-               <img
-                 src={URL.createObjectURL(image)}
-                 alt="Preview"
-                 className="max-h-32 object-contain mr-4 rounded-lg shadow-lg"
-               />
-               <p className="text-lg font-medium text-black">Selected: {image.name}</p>
-             </div>
-           )}
-         </div>
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.detail || "Failed to generate caption");
+      }
 
-         {/* Generate Button */}
-         <button
-           onClick={generateCaption}
-           disabled={loading || !image}
-           className="w-full bg-gray-800 text-white font-semibold py-4 px-4 rounded-lg mb-4 hover:bg-gray-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition"
-         >
-           {loading ? (
-             <span className="flex items-center justify-center">
-               <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
-               Generating Caption...
-             </span>
-           ) : (
-             'Generate Caption'
-           )}
-         </button>
+      const data = await res.json();
+      setCaption(data.caption || "No caption generated.");
 
-         {/* Caption Preview */}
-         {caption && (
-           <div className="p-6 bg-gray-50 border border-gray-200 rounded-lg mb-6">
-             <div className="flex items-center justify-between flex-col sm:flex-row">
-               <div className="flex items-center mb-4 sm:mb-0">
-                 {image && (
-                   <img
-                     src={URL.createObjectURL(image)}
-                     alt="Generated Caption"
-                     className="max-h-24 object-contain mr-4 rounded-lg shadow-lg"
-                   />
-                 )}
-                 <div>
-                   <p className="text-sm font-medium text-gray-600 mb-1">Generated Caption:</p>
-                   <p className="text-xl text-black">"{caption}"</p>
-                 </div>
-               </div>
-               <button
-                 onClick={downloadCaption}
-                 className="mt-4 sm:mt-0 bg-gray-600 text-white font-medium py-2 px-4 rounded-lg hover:bg-gray-500 transition"
-               >
-                 Download Caption
-               </button>
-             </div>
-           </div>
-         )}
+      // Mark guest as used
+      if (!token) setGuestUsed(true);
 
-         {/* Save to Database */}
-         {caption && (
-           <button
-             onClick={saveToDatabase}
-             className="w-full bg-gray-800 text-white font-semibold py-4 px-4 rounded-lg mb-6 hover:bg-gray-700 transition"
-           >
-             Save to Database
-           </button>
-         )}
+      // Update recent for logged-in users
+      if (token) {
+        const recentRes = await fetch("http://localhost:8000/history/recent", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const recentData = await recentRes.json();
+        setRecent(recentData.items || []);
+      }
+    } catch (err) {
+      console.error("Error generating caption:", err);
+      setCaption(err.message || "Error generating caption");
+    }
+    setLoading(false);
+  };
 
-         {/* How It Works */}
-         <div className="text-center mt-8">
-           <h2 className="text-2xl font-semibold text-black mb-6">How It Works</h2>
-           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-             <div className="flex flex-col items-center p-4 bg-gray-100 border border-gray-200 rounded-lg transition hover:bg-gray-200">
-               <div className="w-12 h-12 mb-3 bg-blue-500 rounded-full flex items-center justify-center">
-                 <span className="text-xl text-white">1</span>
-               </div>
-               <p className="text-lg font-medium text-black mb-1">Upload an Image</p>
-               <p className="text-sm text-gray-500">Drag and drop or click to select your image</p>
-             </div>
-             <div className="flex flex-col items-center p-4 bg-gray-100 border border-gray-200 rounded-lg transition hover:bg-gray-200">
-               <div className="w-12 h-12 mb-3 bg-green-500 rounded-full flex items-center justify-center">
-                 <span className="text-xl text-white">2</span>
-               </div>
-               <p className="text-lg font-medium text-black mb-1">AI Analysis</p>
-               <p className="text-sm text-gray-500">Our advanced computer vision analyzes your image</p>
-             </div>
-             <div className="flex flex-col items-center p-4 bg-gray-100 border border-gray-200 rounded-lg transition hover:bg-gray-200">
-               <div className="w-12 h-12 mb-3 bg-purple-500 rounded-full flex items-center justify-center">
-                 <span className="text-xl text-white">3</span>
-               </div>
-               <p className="text-lg font-medium text-black mb-1">Get Caption</p>
-               <p className="text-sm text-gray-500">Receive an intelligent description of your image</p>
-             </div>
-           </div>
-         </div>
-       </div>
-     </div>
-   </div>
- );
+  // Add copy caption function
+  const copyCaption = (text) => {
+    navigator.clipboard.writeText(text).then(() => {
+      alert("Caption copied to clipboard!");
+    }).catch((err) => {
+      console.error("Failed to copy caption:", err);
+      alert("Failed to copy caption.");
+    });
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-6 sm:p-8">
+      <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-6">
+        {/* Left Sidebar */}
+        <div className="md:col-span-1 bg-white p-4 rounded-lg border shadow">
+          <h2 className="text-xl font-bold mb-4">Recent Captions</h2>
+          {token ? (
+            recent.length > 0 ? (
+              <ul className="space-y-4">
+                {recent.map((item) => (
+                  <li key={item.id} className="p-3 bg-gray-100 rounded-md shadow-sm">
+                    <img src={item.image_url} alt="Recent" className="w-full h-24 object-cover rounded mb-2" />
+                    <p 
+                      className="text-sm text-gray-700 cursor-pointer hover:underline" 
+                      onClick={() => copyCaption(item.caption_text)}
+                    >
+                      {item.caption_text}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            ) : <p className="text-gray-500">No recent captions.</p>
+          ) : <p className="text-gray-500">Login to see your recent captions.</p>}
+        </div>
+
+        {/* Main Section */}
+        <div className="md:col-span-3 bg-white p-6 rounded-lg border shadow">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-black mb-2">Image Caption Generator</h1>
+            <p className="text-lg text-gray-600">Upload your image and get AI-generated captions instantly.</p>
+          </div>
+
+          <div
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+            onClick={() => document.getElementById("imageUpload").click()}
+            className="border-2 border-dashed border-gray-400 bg-gray-100 p-8 text-center rounded-lg cursor-pointer hover:border-gray-500 hover:bg-gray-200 transition mb-6"
+          >
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/gif"
+              onChange={handleImageUpload}
+              className="hidden"
+              id="imageUpload"
+            />
+            {!image ? (
+              <>
+                <p className="text-lg font-semibold text-black mb-2">Drag & drop an image here, or click to browse</p>
+                <p className="text-sm text-gray-500">Supported: JPG, PNG, GIF</p>
+              </>
+            ) : (
+              <div className="mt-4">
+                <img src={URL.createObjectURL(image)} alt="Preview" className="max-h-40 mx-auto rounded-lg shadow" />
+                <p className="mt-2 text-gray-600">{image.name}</p>
+              </div>
+            )}
+          </div>
+
+          <button
+            onClick={generateCaption}
+            className="w-full bg-gray-800 text-white font-semibold py-3 px-4 rounded-lg mb-4 hover:bg-gray-700 transition"
+          >
+            {loading ? "Generating..." : "Generate Caption"}
+          </button>
+
+          {caption && (
+            <div className="p-6 bg-gray-50 border border-gray-200 rounded-lg mb-6">
+              <div className="flex items-center justify-between flex-col sm:flex-row">
+                <div className="flex items-center mb-4 sm:mb-0">
+                  {image && <img src={URL.createObjectURL(image)} alt="Generated Caption" className="max-h-24 object-contain mr-4 rounded-lg shadow-lg" />}
+                  <div>
+                    <p className="text-sm font-medium text-gray-600 mb-1">Generated Caption:</p>
+                    <p className="text-xl text-black">"{caption}"</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => copyCaption(caption)} 
+                  className="mt-4 sm:mt-0 bg-gray-600 text-white font-medium py-2 px-4 rounded-lg hover:bg-gray-500 transition"
+                >
+                  Copy Caption
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* How It Works */}
+          <div className="text-center mt-8">
+            <h2 className="text-2xl font-semibold text-black mb-6">How It Works</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {[
+                { step: 1, title: "Upload an Image", text: "Drag and drop or click to select your image", color: "bg-blue-500" },
+                { step: 2, title: "AI Analysis", text: "Our advanced computer vision analyzes your image", color: "bg-green-500" },
+                { step: 3, title: "Get Caption", text: "Receive an intelligent description of your image", color: "bg-purple-500" }
+              ].map(({ step, title, text, color }) => (
+                <div key={step} className="flex flex-col items-center p-4 bg-gray-100 border border-gray-200 rounded-lg transition hover:bg-gray-200">
+                  <div className={`${color} w-12 h-12 mb-3 rounded-full flex items-center justify-center`}>
+                    <span className="text-xl text-white">{step}</span>
+                  </div>
+                  <p className="text-lg font-medium text-black mb-1">{title}</p>
+                  <p className="text-sm text-gray-500">{text}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default Home;

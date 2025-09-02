@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
@@ -10,19 +11,26 @@ const Signup = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // Placeholder fetch call to FastAPI /signup endpoint
-    // fetch('/signup', {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify({ full_name: fullName, email, password }),
-    // })
-    // .then(response => response.json())
-    // .then(data => {
-    //   if (data.success) navigate('/');
-    //   else alert('Signup failed');
-    // })
-    // .catch(error => console.error('Error signing up:', error));
-    navigate('/'); // Temporary redirect for demo
+
+    try {
+      const response = await fetch('http://localhost:8000/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: fullName, email, password }),
+      });
+
+      const data = await response.json();
+
+      if (data.id) {
+        alert(`Signup successful! Welcome ${data.name}`);
+        navigate('/login'); 
+      } else {
+        alert('Signup failed');
+        console.log(data);
+      }
+    } catch (error) {
+      console.error('Error signing up:', error);
+    }
   };
 
   return (
