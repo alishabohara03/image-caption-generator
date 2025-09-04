@@ -8,6 +8,10 @@ const Home = () => {
   const [recent, setRecent] = useState([]);
   const [guestUsed, setGuestUsed] = useState(false);
 
+  // Modal state
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null);
+
   const token = localStorage.getItem("token");
 
   // Fetch recent captions for logged-in users
@@ -99,6 +103,17 @@ const Home = () => {
     });
   };
 
+   // Modal handlers
+  const openModal = (item) => {
+    setSelectedImage(item);
+    setModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setModalOpen(false);
+    setSelectedImage(null);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 p-6 sm:p-8">
       <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -110,7 +125,11 @@ const Home = () => {
               <ul className="space-y-4">
                 {recent.map((item) => (
                   <li key={item.id} className="p-3 bg-gray-100 rounded-md shadow-sm">
-                    <img src={item.image_url} alt="Recent" className="w-full h-24 object-cover rounded mb-2" />
+                    <img src={item.image_url} alt="Recent" className="w-full h-24 object-cover rounded mb-2 cursor-pointer hover:opacity"
+                    onClick={()=> openModal(item)}
+                    
+                    />
+
                     <p 
                       className="text-sm text-gray-700 cursor-pointer hover:underline" 
                       onClick={() => copyCaption(item.caption_text)}
@@ -205,8 +224,51 @@ const Home = () => {
           </div>
         </div>
       </div>
+
+ {/* Modal */}
+      {modalOpen && selectedImage && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-auto">
+            <div className="flex justify-between items-center p-4 border-b">
+              <h3 className="text-lg font-semibold text-black">Image Preview</h3>
+              <button 
+                onClick={closeModal}
+                className="text-gray-500 hover:text-gray-700 text-2xl font-bold leading-none"
+              >
+                ×
+              </button>
+            </div>
+            <div className="p-6">
+              <div className="text-center mb-6">
+                <img 
+                  src={selectedImage.image_url} 
+                  alt="Selected" 
+                  className="max-w-full max-h-96 mx-auto rounded-lg shadow-lg object-contain"
+                />
+              </div>
+              <div className="bg-gray-50 p-4 rounded-lg mb-4">
+                <p className="text-sm font-medium text-gray-600 mb-2">Caption:</p>
+                <p className="text-lg text-black">"{selectedImage.caption_text}"</p>
+              </div>
+              <div className="flex justify-center">
+                <button 
+                  onClick={() => copyCaption(selectedImage.caption_text)}
+                  className="bg-gray-600 text-white font-medium py-2 px-6 rounded-lg hover:bg-gray-500 transition"
+                >
+                  Copy Caption
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
+
+    
   );
 };
 
 export default Home;
+
+
