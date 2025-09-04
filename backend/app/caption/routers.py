@@ -35,7 +35,6 @@ def validate_image(file: UploadFile):
             detail="File too large. Max size is 10MB."
         )
 
-
 @router.post("/upload", response_model=UploadResponse)
 async def upload_and_caption(
     request: Request,
@@ -52,44 +51,55 @@ async def upload_and_caption(
 
     # Check guest limit
     if not current_user:
-        
         if guest_usage.get(ip, 0) >= 1:
             raise HTTPException(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
                 detail="Guest limit reached. Please login to generate more captions."
             )
 
-
     try:
         # Upload image to Cloudinary
         image_url = await upload_image_to_cloudinary(file)
 
         # Generate caption
-        caption_text,confidence = generate_caption(image_url, threshold=0.3)
+        caption_text, confidence = generate_caption(image_url)
+        threshold = 0.3
+        caption_id = None
 
-        if current_user:
-            # Save to DB
+        # Only save if confidence is above threshold
+        if current_user and confidence >= threshold:
             caption_record = Caption(
                 user_id=current_user.id,
                 image_url=image_url,
-                caption_text=caption_text,
+                caption_text=caption_text
             )
             db.add(caption_record)
             db.commit()
             db.refresh(caption_record)
             caption_id = caption_record.id
-        else:
-            # Guest track usage, no DB save
-            guest_usage[ip] = guest_usage.get(ip, 0) + 1
-            caption_id = None
 
-        return {
-            "message": "Caption generated successfully",
-            "image_url": image_url,
-            "caption": caption_text,
-            "confidence": confidence,
-            "caption_id": caption_id
-        }
+        elif not current_user and confidence >= threshold:
+            guest_usage[ip] = guest_usage.get(ip, 0) + 1
+
+        # Return response based on confidence
+        if confidence < threshold:
+            return {
+                "message": "Caption generated with low confidence",
+                "image_url": image_url,
+                "caption": None,
+                "confidence": confidence,
+                "warning": "⚠️ Warning: This image cannot be accurately understood by the model.",
+                "caption_id": caption_id
+            }
+        else:
+            return {
+                "message": "Caption generated successfully",
+                "image_url": image_url,
+                "caption": caption_text,
+                "confidence": confidence,
+                "warning": None,
+                "caption_id": caption_id
+            }
 
     except Exception as e:
         print(traceback.format_exc())

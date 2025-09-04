@@ -18,13 +18,12 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 MODEL_DIR = os.path.join(BASE_DIR, "models")
 
 MODEL_PATH = os.path.join(MODEL_DIR, "model.keras")
-TOKENIZER_PATH = os.path.join(MODEL_DIR, "tokenizer.pkl")
 FEATURE_EXTRACTOR_PATH = os.path.join(MODEL_DIR, "feature_extractor.keras")
-
+TOKENIZER_PATH = os.path.join(MODEL_DIR, "tokenizer.pkl")
 
 def load_components():
-    """Load caption model, feature extractor, and tokenizer (only once)."""
-    global caption_model, feature_extractor, tokenizer
+    """Load caption model, feature extractor, and tokenizer."""
+    global caption_model, feature_extractor, tokenizer 
 
     if caption_model is None:
         if os.path.exists(MODEL_PATH):
@@ -39,7 +38,6 @@ def load_components():
             print("Feature extractor loaded.")
         else:
             print("Feature extractor file not found!")
-
 
     if tokenizer is None:
         if os.path.exists(TOKENIZER_PATH):
@@ -74,15 +72,19 @@ def clean_caption(caption: str) -> str:
             seen.add(w)
     return " ".join(clean_words)
 
-def generate_caption(image_path: str, threshold:float = 0.3) -> tuple[str, float]:
-    """Generate caption and confidence score for an image."""
+
+def generate_caption(image_path: str, threshold: float = 0.3):
+    """
+    Generate caption with greedy search and return (caption, confidence).
+    If confidence is below threshold, return (None, confidence).
+    """
     global caption_model, feature_extractor, tokenizer
 
     # Ensure models are loaded
     load_components()
 
     if not caption_model or not feature_extractor or not tokenizer:
-        return "Model not loaded properly", 0.0
+        return None, 0.0
 
     # Extract features
     img = preprocess_image(image_path)
@@ -90,18 +92,18 @@ def generate_caption(image_path: str, threshold:float = 0.3) -> tuple[str, float
 
     # Generate sequence
     in_text = "startseq"
-    confidences = []
+    confidence_scores = []
 
     for _ in range(MAX_LENGTH):
         sequence = tokenizer.texts_to_sequences([in_text])[0]
         sequence = pad_sequences([sequence], maxlen=MAX_LENGTH)
         yhat = caption_model.predict([image_features, sequence], verbose=0)
 
-        yhat_probs = yhat[0]
-        yhat_index = np.argmax(yhat_probs)
+        yhat_index = np.argmax(yhat)
         word = tokenizer.index_word.get(yhat_index, None)
-        confidence = yhat_probs[yhat_index]
-        confidences.append(confidence)
+
+        # track confidence for this word
+        confidence_scores.append(np.max(yhat))
 
         if word is None:
             break
@@ -109,10 +111,26 @@ def generate_caption(image_path: str, threshold:float = 0.3) -> tuple[str, float
         if word == "endseq":
             break
 
+    # Average confidence
+    confidence = float(np.mean(confidence_scores)) if confidence_scores else 0.0
+
+    # Clean caption text
     caption = in_text.replace("startseq", "").replace("endseq", "").strip()
     caption = clean_caption(caption)
-    avg_conf = float(np.mean(confidences))
 
-    if avg_conf < threshold:
-        caption += f" (low confidence: {avg_conf:.2f})"
-    return caption, avg_conf
+    # Threshold check
+    if confidence < threshold:
+        return None, confidence
+
+    return caption, confidence
+
+
+
+
+
+
+
+
+
+
+

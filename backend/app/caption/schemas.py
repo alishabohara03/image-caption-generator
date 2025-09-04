@@ -15,6 +15,6 @@ class CaptionResponse(BaseModel):
 class UploadResponse(BaseModel):
     message: str
     image_url: str
-    caption: str
-    confidence: float
-    caption_id: Optional[int] 
+    caption: Optional[str]  # <-- fixed: now optional
+    caption_id: Optional[int]
+    warning: Optional[str] = None  # <-- added to handle low-confidence warnings
