@@ -16,4 +16,5 @@ class UploadResponse(BaseModel):
     message: str
     image_url: str
     caption: str
+    confidence: float
     caption_id: Optional[int] 

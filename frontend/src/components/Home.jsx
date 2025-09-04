@@ -88,15 +88,14 @@ const Home = () => {
     setLoading(false);
   };
 
-  const downloadCaption = () => {
-    if (!caption) return;
-    const blob = new Blob([caption], { type: "text/plain" });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "caption.txt";
-    a.click();
-    window.URL.revokeObjectURL(url);
+  // Add copy caption function
+  const copyCaption = (text) => {
+    navigator.clipboard.writeText(text).then(() => {
+      alert("Caption copied to clipboard!");
+    }).catch((err) => {
+      console.error("Failed to copy caption:", err);
+      alert("Failed to copy caption.");
+    });
   };
 
   return (
@@ -111,7 +110,12 @@ const Home = () => {
                 {recent.map((item) => (
                   <li key={item.id} className="p-3 bg-gray-100 rounded-md shadow-sm">
                     <img src={item.image_url} alt="Recent" className="w-full h-24 object-cover rounded mb-2" />
-                    <p className="text-sm text-gray-700">{item.caption_text}</p>
+                    <p 
+                      className="text-sm text-gray-700 cursor-pointer hover:underline" 
+                      onClick={() => copyCaption(item.caption_text)}
+                    >
+                      {item.caption_text}
+                    </p>
                   </li>
                 ))}
               </ul>
@@ -169,8 +173,11 @@ const Home = () => {
                     <p className="text-xl text-black">"{caption}"</p>
                   </div>
                 </div>
-                <button onClick={downloadCaption} className="mt-4 sm:mt-0 bg-gray-600 text-white font-medium py-2 px-4 rounded-lg hover:bg-gray-500 transition">
-                  Download Caption
+                <button 
+                  onClick={() => copyCaption(caption)} 
+                  className="mt-4 sm:mt-0 bg-gray-600 text-white font-medium py-2 px-4 rounded-lg hover:bg-gray-500 transition"
+                >
+                  Copy Caption
                 </button>
               </div>
             </div>

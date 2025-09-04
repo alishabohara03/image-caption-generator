@@ -39,6 +39,8 @@ backend/models/*.h5
 */*/.keras/
 */*/*/.keras/
 backend/models/*.keras
+flickr8k/
+images/
 
 
 

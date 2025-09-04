@@ -45,7 +45,11 @@ async def upload_and_caption(
 ):
     # Validate image
     validate_image(file)
-    ip = request.client.host
+    if request.client:
+        ip = request.client.host
+    else:
+        ip = "unknown"
+
     # Check guest limit
     if not current_user:
         
@@ -61,14 +65,14 @@ async def upload_and_caption(
         image_url = await upload_image_to_cloudinary(file)
 
         # Generate caption
-        caption_text = generate_caption(image_url)
+        caption_text,confidence = generate_caption(image_url, threshold=0.3)
 
         if current_user:
-            # Logged-in user → save to DB
+            # Save to DB
             caption_record = Caption(
                 user_id=current_user.id,
                 image_url=image_url,
-                caption_text=caption_text
+                caption_text=caption_text,
             )
             db.add(caption_record)
             db.commit()
@@ -83,6 +87,7 @@ async def upload_and_caption(
             "message": "Caption generated successfully",
             "image_url": image_url,
             "caption": caption_text,
+            "confidence": confidence,
             "caption_id": caption_id
         }
 
