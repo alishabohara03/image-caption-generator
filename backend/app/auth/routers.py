@@ -35,7 +35,7 @@ async def signup(user_data: UserSignup, db: Session = Depends(get_db)):
 async def login(user_credentials: UserLogin, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == user_credentials.email).first()
     
-    if not user or not verify_password(user_credentials.password, user.password_hash):
+    if not user or not verify_password(user_credentials.password, user.password_hash):   #type:ignore
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password"

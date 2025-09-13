@@ -10,7 +10,7 @@ from tensorflow.keras.preprocessing.image import load_img, img_to_array #type:ig
 caption_model = None
 feature_extractor = None
 tokenizer = None
-MAX_LENGTH = 27
+MAX_LENGTH = 49
 IMG_SIZE = 224
 
 
@@ -73,7 +73,7 @@ def clean_caption(caption: str) -> str:
     return " ".join(clean_words)
 
 
-def generate_caption(image_path: str, threshold: float = 0.3):
+def generate_caption(image_path: str, threshold: float = 0.4):
     """
     Generate caption with greedy search and return (caption, confidence).
     If confidence is below threshold, return (None, confidence).
@@ -123,6 +123,7 @@ def generate_caption(image_path: str, threshold: float = 0.3):
         return None, confidence
 
     return caption, confidence
+
 
 
 

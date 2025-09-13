@@ -41,6 +41,4 @@ backend/models/*.h5
 backend/models/*.keras
 flickr8k/
 images/
-
-
-
+coco/
